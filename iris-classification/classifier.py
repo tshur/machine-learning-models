@@ -127,7 +127,7 @@ class QDAClassifier():
         return best_label
 
     def evaluateErrors(self, data_set):
-        correct, total = 0, 0
+        correct = total = 0
         for class_label, class_data in enumerate(data_set):
             for sample in class_data:
                 predicted_label = self.classifySample(sample)

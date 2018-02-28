@@ -150,12 +150,11 @@ def main():
     # print('Linear Regression with closed form optimization:')
     # lr.run(train, test, lr.trainClosedForm)
 
-    print('Ridge Regression with k-fold cross-validation and closed form optimization:')
-    rr.run(train, test, rr.trainClosedForm)
-    rr.checkWeights()
+    #print('Ridge Regression with k-fold cross-validation and closed form optimization:')
+    #rr.run(train, test, rr.trainClosedForm)
 
-    # print('Linear Regression with gradient descent optimization:')
-    # lr.run(train, test, lr.trainGradientDescent)
+    print('Linear Regression with gradient descent optimization:')
+    lr.run(train, test, lr.trainGradientDescent)
 
     # print('Ridge Regression with k-fold cross-validation and gradient descent optimization:')
     # rr.run(train, test, rr.trainGradientDescent)
