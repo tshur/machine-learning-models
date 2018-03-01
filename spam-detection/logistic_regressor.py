@@ -122,16 +122,24 @@ class LogisticRegressor:
     def trainGradientDescent(self, X, y):
         """Optimize the model weights using gradient descent optimization."""
 
-        alpha, tol = 5e-5, 1e-4
+        steps = 0
+        rate, eps = 5e-5, 7e-5
         w_new = np.mat(np.random.normal(0, 1, X.shape[1])).T
         vsigmoid = np.vectorize(sigmoid)
 
+        print('Gradient descent with convergence threshold of {}...'.format(eps))
         while True:
             w_old = w_new
-            w_new = w_old + alpha * X.T * (y - vsigmoid(X * w_old))
+            w_new = w_old + rate * X.T * (y - vsigmoid(X * w_old))
+            steps += 1
 
-            if np.linalg.norm(w_new - w_old) < tol:
+            if steps % 1000 == 0:
+                print('  (Step: {}, Likelihood: {:08f}, dWeights: {:08f})'.format(
+                    steps, self.logLikelihood(X, y, w_new), np.linalg.norm(w_new - w_old)))
+
+            if np.linalg.norm(w_new - w_old) < eps:
                 break
+        print('Gradient descent completed in {} steps'.format(steps))
 
         self.w = w_new
 
@@ -161,12 +169,14 @@ class LogisticRegressor:
 
         train_err = self.evaluateError(DataSet.features(train), DataSet.labels(train))
         test_err = self.evaluateError(DataSet.features(test), DataSet.labels(test))
-        print('\tTraining Error: {:.06f}\n\tTest Error: {:.06f}\n'.format(train_err, test_err))
+        print('Evaluating Error...\n\
+               \tTraining Error: {:.06f}\n\
+               \tTest Error: {:.06f}\n'.format(train_err, test_err))
 
 def sigmoid(r):
     """Maps r in (-Inf, Inf) to a probability in [0, 1]."""
 
-    return 1.0 / (1 + exp(-r))
+    return 1 / (1 + exp(-r))
 
 def main():
     dataset = DataSet.fromFilenames(TRAIN_FILEPATH, TEST_FILEPATH, STATS_FILEPATH)
