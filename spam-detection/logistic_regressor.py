@@ -1,15 +1,17 @@
-# Python 3
+#! /usr/bin/python3
 
 import numpy as np
 from math import log
 from math import exp
 
-TRAIN_FILEPATH = 'spambase/spam-train'
-TEST_FILEPATH = 'spambase/spam-test'
-STATS_FILEPATH = 'spambase/spambase.stats'
+TRAIN_FILEPATH = 'spambase/spam-train'      # file containing the training data
+TEST_FILEPATH = 'spambase/spam-test'        # file containing the test data
+STATS_FILEPATH = 'spambase/spambase.stats'  # file containing mean and stdev
 
 class DataSet:
     def __init__(self, train, test, stats):
+        """Create a new dataset object with training data, test data, and statistics."""
+
         self.train = np.mat(np.array(train).astype(np.float))
         self.test = np.mat(np.array(test).astype(np.float))
         self.stats = stats
@@ -19,7 +21,11 @@ class DataSet:
         """Construct a new DataSet object from training/test filenames."""
 
         def extractData(filename):
+            """Extract the data from the given file and prepare it for regression."""
+
             def addIntercept(sample):
+                """Add a `1` value for the regression intercept."""
+
                 sample.insert(-1, 1)
                 return sample
 
@@ -27,6 +33,8 @@ class DataSet:
                 return list(map(lambda l: addIntercept(l.split(',')), fp.readlines()))
 
         def loadStatistics(filename):
+            """Return the mean and stdev information from `filename`."""
+
             stats = []  # list of tuple(mean, stdev)
             with open(filename, 'r') as fp:
                 next(fp)
@@ -42,17 +50,21 @@ class DataSet:
     def features(data):
         """Return the features of the data in an np.mat."""
 
-        return data[:,:-1]
+        return data[:, :-1]
 
     @staticmethod
     def labels(data):
         """Return the labels of the data in an np.mat."""
 
-        return data[:,-1]
+        return data[:, -1]
 
     @staticmethod
     def normalized(dset):
+        """Normalizes the data according to mean and stdev in self.stats."""
+
         def helper(data, stats):
+            """Normalizes a single dataset according to the stats argument."""
+
             newdata = np.mat(np.zeros(data.shape))
             for r in range(data.shape[0]):
                 for c in range(data.shape[1] - 2):
@@ -65,6 +77,8 @@ class DataSet:
 
     @staticmethod
     def transformed(dset):
+        """Transforms the data according to x = log(x + 0.1)."""
+
         def helper(data):
             newdata = np.mat(np.zeros(data.shape))
             for r in range(data.shape[0]):
@@ -78,15 +92,13 @@ class DataSet:
 
     @staticmethod
     def binarized(dset):
+        """Binarizes the data so that values > 0 are mapped to 1."""
+
         def helper(data):
-            return np.mat(np.where(data > 0.0, 1.0, 0.0))
+            return np.mat(np.where(data > 0.0, 1, 0))
 
         return helper(dset.train), helper(dset.test)
 
-def sigmoid(r):
-    """Maps r in (-Inf, Inf) to a probability in [0, 1]"""
-
-    return 1.0 / (1 + exp(-r))
 
 class LogisticRegressor:
     def run(self, train, test):
@@ -96,14 +108,16 @@ class LogisticRegressor:
         self.evaluate(train, test)
 
     def logLikelihood(self, X, y, w):
-        sum_ = 0
+        """Computes the log of the likelihood for logistic regression."""
+
+        result = 0
         for i in range(len(y)):
             if y[i] == 1:
-                sum_ += log(sigmoid(X[i] * w))
+                result += log(sigmoid(X[i] * w))
             else:
-                sum_ += log(1 - sigmoid(X[i] * w))
+                result += log(1 - sigmoid(X[i] * w))
 
-        return sum_
+        return result
 
     def trainGradientDescent(self, X, y):
         """Optimize the model weights using gradient descent optimization."""
@@ -122,23 +136,23 @@ class LogisticRegressor:
         self.w = w_new
 
     def classify(self, sample):
-        """Given a sample, predict the sample's class using the model"""
+        """Given a sample, predict the sample's class using the model."""
 
         score = self.w.T * sample.T
         probability = sigmoid(score)
         
         if probability >= 0.5:
-            return 1.0
+            return 1
         else:
-            return 0.0
+            return 0
 
     def evaluateError(self, X, y):
+        """Compute the error rate."""
+
         correct = 0
         for i in range(len(y)):
             if self.classify(X[i]) == y[i]:
                 correct += 1
-
-        print(correct, len(y))
 
         return 1 - correct / len(y)
 
@@ -149,18 +163,20 @@ class LogisticRegressor:
         test_err = self.evaluateError(DataSet.features(test), DataSet.labels(test))
         print('\tTraining Error: {:.06f}\n\tTest Error: {:.06f}\n'.format(train_err, test_err))
 
+def sigmoid(r):
+    """Maps r in (-Inf, Inf) to a probability in [0, 1]."""
+
+    return 1.0 / (1 + exp(-r))
 
 def main():
     dataset = DataSet.fromFilenames(TRAIN_FILEPATH, TEST_FILEPATH, STATS_FILEPATH)
-    # otrain, otest = dataset.train, dataset.test
+
+    # Test the model with different types of data pre-processing
     ntrain, ntest = DataSet.normalized(dataset)
     ttrain, ttest = DataSet.transformed(dataset)
     btrain, btest = DataSet.binarized(dataset)
 
     lr = LogisticRegressor()
-
-    # print('Running Logistic Regressor on original, unaltered data...')
-    # lr.run(otrain, otest)
 
     print('Running Logistic Regressor on normalized data (mean = 0, var = 1)...')
     lr.run(ntrain, ntest)
